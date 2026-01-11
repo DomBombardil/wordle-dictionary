@@ -45,3 +45,4 @@ As a side project, this application will be expanded with:
 ## Run the Project
 ```bash
 python wordle.py
+

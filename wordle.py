@@ -6,15 +6,7 @@ import random
 
 class Wordle:
     def __init__(self):        
-        self.path = (
-        Path.home() 
-        / "Documents" 
-        / "Python_programming" 
-        / "python_work" 
-        / "RealPython_learning" 
-        / "REPL_interactive_sessions" 
-        / "wordle_translations.json"
-        )
+        self.path = Path("wordle_translations.json")
     
     def __repr__(self):
         return f'Wordle(path="{self.path}")'
