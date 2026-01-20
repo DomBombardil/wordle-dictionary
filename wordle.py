@@ -81,16 +81,16 @@ class Wordle:
                 print(f"Found: German: {de} - Croatian: {hr}")
                 found = True
             
-                if not found:
-                    print("Entry not found.")
-                    add_entry = input(
-                        "Would you like to add it? (y/n): ").strip().lower()
-                    if add_entry == 'y':
-                        self.create_entry()
-                        break
-                    if add_entry == 'n':
-                        print("No entry added.")
-                        break
+            if not found:
+                print("Entry not found.")
+                add_entry = input(
+                    "Would you like to add it? (y/n): ").strip().lower()
+                if add_entry == 'y':
+                    self.create_entry()
+                    break
+                if add_entry == 'n':
+                    print("No entry added.")
+                    break
 
     def _read_file(self):
         try: 
