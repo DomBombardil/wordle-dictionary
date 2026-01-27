@@ -74,23 +74,23 @@ class Wordle:
             "Enter the German or Croatian word to search: ").strip().lower()
 
         data = self._read_file()
-        
-        found = False
+
         for de, hr in data.items():
-            if term == de.lower() or term == hr.lower():
+            de_norm = de.strip().lower()
+            hr_parts = [p.strip().lower() for p in hr.split(",")]
+
+            if term == de_norm or term in hr_parts:
                 print(f"Found: German: {de} - Croatian: {hr}")
-                found = True
-            
-            if not found:
-                print("Entry not found.")
-                add_entry = input(
-                    "Would you like to add it? (y/n): ").strip().lower()
-                if add_entry == 'y':
-                    self.create_entry()
-                    break
-                if add_entry == 'n':
-                    print("No entry added.")
-                    break
+                return
+
+        print("Entry not found.")
+        
+        add_entry = input("Would you like to add it? (y/n): ").strip().lower()
+        if add_entry == "y":
+            self.create_entry()
+        else:
+            print("No entry added.")
+
 
     def _read_file(self):
         try: 
