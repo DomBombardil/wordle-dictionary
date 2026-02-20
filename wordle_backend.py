@@ -19,18 +19,9 @@ class EntryNotFoundError(WordleError):
     """Raised when an entry is not found in the dictionary."""
     pass
 
-class Wordle:
-    def __init__(self):        
-        self.path = (
-        Path.home() 
-        / "Documents" 
-        / "Python_programming" 
-        / "python_work" 
-        / "RealPython_learning" 
-        / "REPL_interactive_sessions"
-        / "Wordle" 
-        / "wordle_translations.json"
-        )
+class WordleBackend:
+    def __init__(self, path):        
+        self.path = Path(path)
     
     def __repr__(self):
         return f'Wordle(path="{self.path}")'
@@ -101,7 +92,7 @@ class Wordle:
             raise WordleError("The dictionary is empty. Please add some entries before starting a new round.")
 
         de_play_word = random.choice(list(data.keys()))
-        accepted_answers = self._split_accepted_answers(data[de_play_word]) 
+        accepted_answers = self._split_accepted_answers(data)[de_play_word] 
         return de_play_word, accepted_answers
 
     def show_hint(self, accepted_answers):
