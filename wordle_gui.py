@@ -26,9 +26,10 @@ class WordleApp():
         self.result_lbl = tk.Label(root, text='Or click on an Add entry to add a new word to the dictionary')
         self.result_lbl.pack()
 
-        self.nr_b = tk.Button(root, text="New round", command=self.new_round)
+        self.nr_b = tk.Button(root, text="New Game", command=self.new_round)
         self.ae_b = tk.Button(root, text="Add entry", command=self.create_entry)
         self.ca_b = tk.Button(root, text="Check answer", command=self.check_answer)
+        self.hint_b = tk.Button(root, text="Hint", command=self.hint)
 
         self.nr_b.pack()
         self.ae_b.pack()
@@ -37,7 +38,9 @@ class WordleApp():
         """A function to start a new round."""
         self.user_input.bind("<Escape>", self.reset)
         self.user_input.bind("<Return>", self.check_answer)
+        self.nr_b.config(text="New word")
         self.ca_b.pack()
+        self.hint_b.pack()
         self.ae_b.pack_forget()
 
         try:
@@ -67,11 +70,20 @@ class WordleApp():
         try:
             if self.backend.check_answer(user_answer, self.current_acepted_answers):
                 self.result_lbl.config(text=f'Correct! these are all the accepted answers: {", ".join(self.current_acepted_answers)}')
+
+            elif user_answer == "":
+                self.result_lbl.config(text=f'The aproved answers are: {", ".join(self.current_acepted_answers)}') 
+
             else:
                 self.result_lbl.config(text=f'Incorrect! the aproved answers are: {", ".join(self.current_acepted_answers)}') 
         
         except WordleError as e:
             messagebox.showerror("Backend Error", str(e))
+
+    def hint(self, event=False):
+        """A function to show a hint to the user."""
+        current_hint = self.backend.show_hint(self.current_acepted_answers)
+        self.result_lbl.config(text=f'Hint: {", ".join(current_hint)}')
 
     def create_entry(self):
         """A function to create a German dictionary entry."""
@@ -111,8 +123,8 @@ class WordleApp():
         """Reset all the values and quit the started process."""
         # Reset all text and user input.
         self.user_input.delete(0, tk.END)
-        self.word_lbl.config(text="")
-        self.result_lbl.config(text="")
+        self.word_lbl.config(text='Click on a "New game" to start')
+        self.result_lbl.config(text='Or click on an Add entry to add a new word to the dictionary')
 
         # Reset all the keybinds.
         self.user_input.unbind("<Return>")
@@ -120,7 +132,9 @@ class WordleApp():
 
         # Reset the button configuration.
         self.ca_b.pack_forget()
+        self.hint_b.pack_forget()
         self.ae_b.pack()
+        self.nr_b.config(text="New Game")
 
         # Reset the current state.
         self.current_de_word = False
