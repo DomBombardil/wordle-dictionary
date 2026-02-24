@@ -34,9 +34,16 @@ class WordleApp():
         self.nr_b.pack()
         self.ae_b.pack()
 
+
+        self.user_input.bind("<Escape>", self.reset)
+
+        # App state
+        self.state = "IDLE"
+
     def new_round(self):
         """A function to start a new round."""
-        self.user_input.bind("<Escape>", self.reset)
+        self.state = "PLAYING"
+
         self.user_input.bind("<Return>", self.check_answer)
         self.nr_b.config(text="New word")
         self.ca_b.pack()
@@ -57,9 +64,11 @@ class WordleApp():
 
         except WordleError as e:
             messagebox.showerror("Backend Error", str(e))
-    
+        
     def check_answer(self, event=False):
         """A function to check the validity of the answer"""
+        self.state = "PLAYING"
+
         self.user_input.bind("<Escape>", self.reset)
 
         if self.current_de_word is None:
@@ -69,58 +78,74 @@ class WordleApp():
 
         try:
             if self.backend.check_answer(user_answer, self.current_acepted_answers):
-                self.result_lbl.config(text=f'Correct! these are all the accepted answers: {", ".join(self.current_acepted_answers)}')
+                self.result_lbl.config(text=f'Correct! Here are all of the accepted answers: {", ".join(self.current_acepted_answers)}')
 
             elif user_answer == "":
                 self.result_lbl.config(text=f'The aproved answers are: {", ".join(self.current_acepted_answers)}') 
 
             else:
-                self.result_lbl.config(text=f'Incorrect! the aproved answers are: {", ".join(self.current_acepted_answers)}') 
+                self.result_lbl.config(text=f'Incorrect! The aproved answers are: {", ".join(self.current_acepted_answers)}') 
         
         except WordleError as e:
             messagebox.showerror("Backend Error", str(e))
 
     def hint(self, event=False):
         """A function to show a hint to the user."""
+        self.state = "PLAYING"
+
         current_hint = self.backend.show_hint(self.current_acepted_answers)
         self.result_lbl.config(text=f'Hint: {", ".join(current_hint)}')
 
     def create_entry(self):
         """A function to create a German dictionary entry."""
-        try:
-            self.word_lbl.config(text='Write a German word you would like to save, and press "Enter" to continue, "ESC" to quit. ')
-            self.user_input.bind("<Return>", self.next_step)
-            self.user_input.bind("<Escape>", self.reset)
-        except WordleError as e:
-            messagebox.showerror("Backend error", str(e))
+        self.state = "CREATING"
 
-    def next_step(self, event):
+        self.word_lbl.config(text='Write a German word you would like to save')
+        self.result_lbl.config(text='Press "Enter" to continue, "ESC" to return to main menu.')
+
+        self.user_input.bind("<Return>", self.next_step)
+
+        self.nr_b.pack_forget()
+        self.ae_b.config(command=self.next_step)
+
+    def next_step(self, event=False):
         """A function to create a Croatian counterpart entry."""
-        try:
-            self.de_word = self.user_input.get()
+        self.state = "CREATING_DE"
 
-            self.user_input.delete(0, tk.END)
-            self.user_input.focus
+        self.de_word = self.user_input.get()
 
-            self.word_lbl.config(text='Write a Croatian counterpart and press "Enter" to save the entry "ESC" to quit. ')
+        self.user_input.delete(0, tk.END)
+        self.user_input.focus
 
-            self.user_input.unbind("<Return>")
-            self.user_input.bind("<Return>", self.final_step)
-            self.user_input.bind("<Escape>", self.reset)
-            
-        except WordleError as e:
-            messagebox.showerror("Backend error", str(e))    
+        self.word_lbl.config(text='Write a Croatian counterpart') 
 
-    def final_step(self, event):
-        """A function to save both entries"""
-        self.hr_word = self.user_input.get()
-        self.backend.create_entry(self.de_word, self.hr_word)
-
-        self.word_lbl.config(text="Entry saved succesfuly!")
         self.user_input.unbind("<Return>")
+        self.user_input.bind("<Return>", self.final_step)
+            
+        self.ae_b.config(command=self.final_step)
+        
+    def final_step(self, event=False):
+        """A function to save both entries"""
+        self.state = "CREATING_HR"
+
+        try :
+            self.hr_word = self.user_input.get()
+            self.backend.create_entry(self.de_word, self.hr_word)
+
+            self.word_lbl.config(text="Entry saved succesfuly!")
+            self.user_input.unbind("<Return>")
+
+        except WordleError as e:
+            self.reset()
+            messagebox.showerror("Backend error", str(e))
 
     def reset(self, event):
         """Reset all the values and quit the started process."""
+        # Reset the current state.
+        self.state = "IDLE"
+        self.current_de_word = None 
+        self.current_acepted_answers = None 
+
         # Reset all text and user input.
         self.user_input.delete(0, tk.END)
         self.word_lbl.config(text='Click on a "New game" to start')
@@ -128,18 +153,16 @@ class WordleApp():
 
         # Reset all the keybinds.
         self.user_input.unbind("<Return>")
-        self.user_input.unbind("<Escape>")
 
         # Reset the button configuration.
         self.ca_b.pack_forget()
         self.hint_b.pack_forget()
-        self.ae_b.pack()
+        self.ae_b.pack_forget()
         self.nr_b.config(text="New Game")
+        self.nr_b.pack()
+        self.ae_b.config(command=self.create_entry)
+        self.ae_b.pack()
 
-        # Reset the current state.
-        self.current_de_word = False
-        self.current_acepted_answers = False
-        
 if __name__ == "__main__":
     root = tk.Tk()
     app = WordleApp(root)
