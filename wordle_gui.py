@@ -17,38 +17,54 @@ class WordleApp():
         self.current_acepted_answers = None
 
         # UI Widgets
-        self.word_lbl = tk.Label(root, text='Click on a "New game" to start') 
+        self.tree = ttk.Treeview(self.root, columns=("German", "Croatian"), show="headings")
+        self.tree.heading("German", text="German")
+        self.tree.heading("Croatian", text="Croatian")
+        
+        self.scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=self.scrollbar)
+
+        self.word_lbl = tk.Label(self.root, text='Click on a "New game" to start') 
         self.word_lbl.pack()
 
-        self.user_input = tk.Entry(root)
+        self.user_input = tk.Entry(self.root)
         self.user_input.pack()
 
         self.result_lbl = tk.Label(root, text='Or click on an Add entry to add a new word to the dictionary')
         self.result_lbl.pack()
 
-        self.nr_b = tk.Button(root, text="New Game", command=self.new_round)
-        self.ae_b = tk.Button(root, text="Add entry", command=self.create_entry)
-        self.ca_b = tk.Button(root, text="Check answer", command=self.check_answer)
-        self.hint_b = tk.Button(root, text="Hint", command=self.hint)
+        self.nr_b = tk.Button(self.root, text="New Game", command=self.new_round)
+        self.ae_b = tk.Button(self.root, text="Add entry", command=self.create_entry)
+        self.ca_b = tk.Button(self.root, text="Check answer", command=self.check_answer)
+        self.hint_b = tk.Button(self.root, text="Hint", command=self.hint)
+        self.tree_b = tk.Button(self.root, text="Dictionary", command=self.words_list)
 
-        self.nr_b.pack()
-        self.ae_b.pack()
 
 
         self.user_input.bind("<Escape>", self.reset)
 
         # App state
         self.state = "IDLE"
+        self._handle_button_prompts()
+        self._handle_key_presses()
+
+    def words_list(self):
+        """A function to display all saved words."""
+        self.state = "DICTIONARY_OPEN"
+        all_words = self.backend.read_entries()
+        self.tree_b.config(command=self.reset)
+
+        for de, hr in all_words:
+            self.tree.insert("", "end", values=(de, hr))
+
+        self.tree.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
 
     def new_round(self):
         """A function to start a new round."""
         self.state = "PLAYING"
         self._handle_key_presses()
-
-        self.nr_b.config(text="New word")
-        self.ca_b.pack()
-        self.hint_b.pack()
-        self.ae_b.pack_forget()
+        self._handle_button_prompts()
 
         try:
             de_word, accepted = self.backend.new_round()
@@ -69,6 +85,7 @@ class WordleApp():
         """A function to check the validity of the answer"""
         self.state = "PLAYING"
         self._handle_key_presses()
+        self._handle_button_prompts()
 
         if self.current_de_word is None:
             messagebox.showinfo("Info","Start the round first")
@@ -92,6 +109,7 @@ class WordleApp():
         """A function to show a hint to the user."""
         self.state = "PLAYING"
         self._handle_key_presses()
+        self._handle_button_prompts()
         current_hint = self.backend.show_hint(self.current_acepted_answers)
         self.result_lbl.config(text=f'Hint: {", ".join(current_hint)}')
 
@@ -99,18 +117,16 @@ class WordleApp():
         """A function to create a German dictionary entry."""
         self.state = "CREATING_DE"
         self._handle_key_presses()
+        self._handle_button_prompts()
 
         self.word_lbl.config(text='Write a German word you would like to save')
         self.result_lbl.config(text='Press "Enter" to continue, "ESC" to return to main menu.')
-
-
-        self.nr_b.pack_forget()
-        self.ae_b.config(command=self.next_step)
 
     def next_step(self, event=None):
         """A function to create a Croatian counterpart entry."""
         self.state = "CREATING_HR"
         self._handle_key_presses()
+        self._handle_button_prompts()
         self.de_word = self.user_input.get()
 
         self.user_input.delete(0, tk.END)
@@ -118,12 +134,12 @@ class WordleApp():
 
         self.word_lbl.config(text='Write a Croatian counterpart') 
 
-        self.ae_b.config(command=self.final_step)
-        
     def final_step(self, event=None):
         """A function to save both entries"""
         self.state = "SAVING_ENTRY"
         self._handle_key_presses()
+        self._handle_button_prompts()
+
         try :
             self.hr_word = self.user_input.get()
             self.backend.create_entry(self.de_word, self.hr_word)
@@ -139,6 +155,9 @@ class WordleApp():
         # Reset the current state.
         self.state = "IDLE"
         self._handle_key_presses()
+        self._handle_button_prompts()
+        self.root.geometry("600x200")
+
 
         self.current_de_word = None 
         self.current_acepted_answers = None 
@@ -152,15 +171,24 @@ class WordleApp():
         self.ca_b.pack_forget()
         self.hint_b.pack_forget()
         self.ae_b.pack_forget()
+        self.tree_b.pack_forget()
         self.nr_b.config(text="New Game")
         self.nr_b.pack()
         self.ae_b.config(command=self.create_entry)
         self.ae_b.pack()
+        self.tree_b.config(command=self.words_list)
+        self.tree_b.pack()
+        
+
+        # Close words tree. 
+        self.tree.pack_forget()
+        self.scrollbar.pack_forget()
 
     def _handle_key_presses(self):
         """A function to handle key bindings depending on the state"""
         if self.state == "IDLE":
             self.user_input.unbind("<Return>")
+            self.user_input.bind("<Escape>", self.reset)
 
         if self.state == "PLAYING":
             self.user_input.bind("<Return>", self.check_answer)
@@ -173,6 +201,44 @@ class WordleApp():
 
         if self.state == "SAVING_ENTRY":
             self.user_input.bind("<Return>", self.reset)
+
+    def _handle_button_prompts(self):
+        """A function handling button prompts depending on state"""
+        # First forget all the buttons.
+        self.nr_b.pack_forget()
+        self.ae_b.pack_forget()
+        self.ca_b.pack_forget()
+        self.hint_b.pack_forget()
+        self.tree_b.pack_forget()
+        
+        if self.state == "IDLE":
+            # Set the button states to their original settings.
+            self.nr_b.config(text="New Game")
+            self.ae_b.config(command=self.create_entry)
+            self.tree_b.config(text="Dictionary", command=self.words_list)
+
+            self.nr_b.pack()
+            self.ae_b.pack()
+            self.tree_b.pack()
+
+        if self.state == "PLAYING":
+            # Configuring buttons for PLAYING state.
+            self.ae_b.pack_forget()
+            self.tree_b.pack_forget()
+            self.nr_b.config(text="New word")
+            self.ca_b.pack()
+            self.hint_b.pack()
+
+        if self.state == "CREATING_DE":
+            # Configuring buttons for CREATING_DE stare.
+            self.nr_b.pack_forget()
+            self.ae_b.config(command=self.next_step)
+
+        if self.state == "CREATING_HR":
+            self.ae_b.config(command=self.final_step)
+
+        if self.state == "SAVING_ENTRY":
+            self.ae_b.config(text="Main Menu", command=self.reset)
 
 if __name__ == "__main__":
     root = tk.Tk()
