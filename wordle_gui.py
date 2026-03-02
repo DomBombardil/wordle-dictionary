@@ -72,24 +72,28 @@ class WordleApp():
         self.tree.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
         self.dictionary_input = tk.Entry(self.dictionary_frame)
+        self.dictionary_input.pack()
 
         # App state
         self.state = "IDLE"
         self._handle_frame_switching()
-        self._handle_button_prompts()
         self._handle_key_presses()
 
     def words_list(self):
         """A function to display all saved words."""
         self.state = "DICTIONARY_OPEN"
+        self.root.geometry("600x600")
         self._handle_frame_switching()
         self._handle_key_presses()
-        all_words = self.backend.read_entries()
+        self.dictionary_input.focus()
         self.tree.delete(*self.tree.get_children())
+        all_words = self.backend.read_entries()
 
         for de, hr in all_words:
             self.tree.insert("", "end", values=(de, hr))
 
+    def word_search(self, word, tree):
+        """A function to search wanted word inside a dictionary"""
 
     def new_round(self):
         """A function to start a new round."""
@@ -146,6 +150,8 @@ class WordleApp():
             self.state = "CREATING_DE"
             self._handle_frame_switching()
             self._handle_key_presses()
+            self.add_entry_input.focus()
+            self.add_en_b.config(command=self.next_step)
 
         self.add_en_tl.config(text='Write a German word you would like to save')
         self.add_en_bl.config(text='Press "Enter" to continue, "ESC" to return to main menu.')
@@ -184,9 +190,12 @@ class WordleApp():
         self.state = "IDLE"
         self._handle_frame_switching()
         self._handle_key_presses()
+        self.add_en_b.config(command=self.create_entry)
 
         self.current_de_word = None 
         self.current_acepted_answers = None 
+
+        self.root.geometry("600x200")
 
     def _handle_key_presses(self):
         """A function to handle key bindings depending on the state"""
@@ -196,7 +205,18 @@ class WordleApp():
         self.dictionary_input.bind("<Escape>", self.reset)
 
         if self.state == "PLAYING":
-            self.game_input.bind("<Return>")
+            self.game_input.bind("<Return>", self.check_answer)
+        
+        if self.state == "CREATING_DE":
+            self.add_entry_input.bind("<Return>", self.next_step)
+
+        if self.state == "CREATING_HR":
+            self.add_entry_input.bind("<Return>", self.final_step)
+
+        if self.state == "SAVING_ENTRY":
+            self.add_entry_input.bind("<Return>", self.reset)
+
+        #if self.state == "DICTIONARY_OPEN":
 
     def _handle_frame_switching(self):
         """A function to switch frames depending on the game state."""
