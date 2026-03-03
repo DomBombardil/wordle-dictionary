@@ -85,6 +85,7 @@ class WordleApp():
         self.root.geometry("600x600")
         self._handle_frame_switching()
         self._handle_key_presses()
+        self.dictionary_input.delete(0, tk.END)
         self.dictionary_input.focus()
         self.tree.delete(*self.tree.get_children())
         all_words = self.backend.read_entries()
@@ -92,8 +93,16 @@ class WordleApp():
         for de, hr in all_words:
             self.tree.insert("", "end", values=(de, hr))
 
-    def word_search(self, word, tree):
+    def word_search(self, event=None):
         """A function to search wanted word inside a dictionary"""
+        searched_word = self.dictionary_input.get()
+
+        for item in self.tree.get_children():
+            values = self.tree.item(item)["values"]
+            if searched_word in values:
+                self.tree.selection_set(item)
+                self.tree.see(item)
+                break
 
     def new_round(self):
         """A function to start a new round."""
@@ -199,10 +208,9 @@ class WordleApp():
 
     def _handle_key_presses(self):
         """A function to handle key bindings depending on the state"""
-        self.add_entry_input.bind("<Escape>", self.reset)
-        self.user_input.bind("<Escape>", self.reset)
-        self.game_input.bind("<Escape>", self.reset)
-        self.dictionary_input.bind("<Escape>", self.reset)
+        self.root.bind("<Escape>", self.reset)
+        # Using lambda here because root.destroy() takes onyl one positional agrument.
+        self.root.bind("<q>", lambda x:self.root.destroy())
 
         if self.state == "PLAYING":
             self.game_input.bind("<Return>", self.check_answer)
@@ -216,7 +224,8 @@ class WordleApp():
         if self.state == "SAVING_ENTRY":
             self.add_entry_input.bind("<Return>", self.reset)
 
-        #if self.state == "DICTIONARY_OPEN":
+        if self.state == "DICTIONARY_OPEN":
+            self.dictionary_input.bind("<Return>", self.word_search)
 
     def _handle_frame_switching(self):
         """A function to switch frames depending on the game state."""
