@@ -159,6 +159,7 @@ class WordleApp():
             self.state = "CREATING_DE"
             self._handle_frame_switching()
             self._handle_key_presses()
+            self.add_entry_input.delete(0, tk.END)
             self.add_entry_input.focus()
             self.add_en_b.config(command=self.next_step)
 
